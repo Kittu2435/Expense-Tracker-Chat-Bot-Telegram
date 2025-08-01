@@ -1,0 +1,7 @@
+pandas
+python-telegram-bot==20.3
+langchain
+langchain-community
+langchain-core
+openpyxl
+python-dotenv

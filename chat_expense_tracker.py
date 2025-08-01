@@ -115,14 +115,3 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         print("❌ Error:", str(e))
         await update.message.reply_text("❌ I couldn't detect valid expenses. Please try again with a clearer format.")
-# === Run the Bot ===
-if __name__ == "__main__":
-    TELEGRAM_BOT_TOKEN = "8334346659:AAEJUNXE1kWxwQDt1VVAyNuC7GwSKAxsT5o"
-
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.add_handler(CommandHandler("download", download_expense_excel))
-
-    print("🚀 Bot is running...")
-    app.run_polling()
