@@ -3,12 +3,12 @@ import time
 from bot import start_bot
 
 def is_active_hours():
-    now = datetime.datetime.now().time()
-    start_time = datetime.time(10,0)
-    end_time = datetime.time(0,0)
-    print("now , start time, end time ", now, start_time, end_time)
+    now_utc = datetime.datetime.now().time()
+    start_time = datetime.time(19,30)
+    end_time = datetime.time(4,0)
+    print("now_utc , start time, end time ", now_utc, start_time, end_time)
     
-    return start_time <= now or now < end_time
+    return start_time <= now_utc or now_utc < end_time
 
 if __name__ == "__main__":
     while True:
