@@ -106,7 +106,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text
     try:
-        response = expense_chain.invoke({"text": user_input})
+        response = category_chain.invoke({"text": user_input})
         print("🔎 Raw LLM Response:", response)
 
         # Get response text
