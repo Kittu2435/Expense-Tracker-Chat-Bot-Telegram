@@ -8,7 +8,7 @@ def is_active_hours():
     end_time = datetime.time(4,0)
     print("now_utc , start time, end time ", now_utc, start_time, end_time)
     
-    if start_time <= now_utc or now_utc <= end_time:
+    if start_time >= now_utc or now_utc <= end_time:
         return True
     return False
 
