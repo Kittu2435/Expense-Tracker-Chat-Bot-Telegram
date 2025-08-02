@@ -22,26 +22,27 @@ llm = ChatOpenAI(
     openai_api_base="https://openrouter.ai/api/v1"
 )
 
-amount_prompt = ChatPromptTemplate.from_template(
+full_prompt = ChatPromptTemplate.from_template(
     """
-    You are a strict JSON extractor.
+    You are a strict JSON extractor and classifier.
 
-    Given this text: '{text}', extract all expenses and numeric amounts.
+    Given this text: '{text}', extract all expenses and numeric amounts, and classify each expense into one of these categories:
+    [Groceries, Food, Travel, Transport, Health, Entertainment, Utilities, Rent, Shopping, Sports, Education, Miscellaneous]
 
     Return ONLY valid JSON in this format:
     [
-      {{"description": "...", "amount": ...}},
-      {{"description": "...", "amount": ...}}
+      {{"description": "...", "amount": ..., "category": "..."}},
+      ...
     ]
 
     Rules:
-    - Return nothing but valid JSON.
-    - Do not include currency names, symbols, or extra text.
-    - No markdown.
+    - Do NOT include currency symbols.
+    - Category must be one from the provided list.
+    - Output valid JSON only. No extra text or markdown.
     """
 )
 
-expense_chain = amount_prompt | llm
+category_chain = full_prompt | llm
 
 # === Load categories once ===
 with open("categories.json", "r") as f:
@@ -49,11 +50,23 @@ with open("categories.json", "r") as f:
 
 # === Categorization ===
 def categorize_expense(description):
-    desc = description.lower()
-    for category, keywords in CATEGORY_KEYWORDS.items():
-        if any(word in desc for word in keywords):
-            return category
+    try:
+        result = category_chain.invoke({"description": description})
+        if isinstance(result, dict):
+            json_text = result.get("text", "")
+        else:
+            json_text = getattr(result, "content", "")
+
+        match = re.search(r'{.*}', json_text, re.DOTALL)
+        if match:
+            category_json = json.loads(match.group(0))
+            return category_json.get("category", "Other")
+
+    except Exception as e:
+        print("❌ Categorization error:", str(e))
+
     return "Other"
+
     
 
 #save expense to excel
@@ -114,8 +127,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         for exp in expenses:
             description = exp["description"]
             amount = float(exp["amount"])
+            category=exp.get("category","Other")
             save_expense_to_excel(description, amount)
-            confirmation += f"✅ {description}: ₹{amount}\n"
+            confirmation += f"✅ {description}: ₹{amount} [{category}]\n"
 
         await update.message.reply_text("Expenses recorded:\n" + confirmation)
 
