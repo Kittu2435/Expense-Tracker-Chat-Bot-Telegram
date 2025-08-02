@@ -6,6 +6,7 @@ def is_active_hours():
     now = datetime.datetime.now().time()
     start_time = datetime.time(10,0)
     end_time = datetime.time(0,0)
+    print("now , start time, end time ", now, start_time, end_time)
     
     return start_time <= now or now < end_time
 

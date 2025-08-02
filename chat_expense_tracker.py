@@ -48,22 +48,18 @@ category_chain = full_prompt | llm
 def categorize_expense(description):
     try:
         result = category_chain.invoke({"description": description})
-        if isinstance(result, dict):
-            json_text = result.get("text", "")
-        else:
-            json_text = getattr(result, "content", "")
+        json_text = result.get("text", "") if isinstance(result, dict) else getattr(result, "content", "")
 
-        match = re.search(r'{.*}', json_text, re.DOTALL)
+        match = re.search(r'\[.*\]', json_text, re.DOTALL)
         if match:
-            category_json = json.loads(match.group(0))
-            return category_json.get("category", "Other")
+            expenses = json.loads(match.group(0))
+            if isinstance(expenses, list) and expenses:
+                return expenses[0].get("category", "Other")
 
     except Exception as e:
         print("❌ Categorization error:", str(e))
 
     return "Other"
-
-    
 
 #save expense to excel
 
