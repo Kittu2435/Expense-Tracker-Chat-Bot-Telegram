@@ -3,5 +3,6 @@ python-telegram-bot==20.3
 langchain
 langchain-community
 langchain-core
+langchain-openai
 openpyxl
 python-dotenv

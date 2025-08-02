@@ -1,5 +1,5 @@
 {
-  "Food": ["food", "restaurant", "dinner", "lunch", "snack", "swiggy", "zomato", "dineout"],
+  "Food": ["food", "restaurant", "dinner", "lunch", "snack", "swiggy", "zomato", "dineout","curry"],
   "Fuel": ["fuel", "petrol", "diesel"],
   "Shopping": ["clothes", "apparel", "shirt", "jeans"],
   "Utilities": ["rent", "electricity", "internet", "bill", "dth"],
@@ -7,5 +7,6 @@
   "Health": ["medicine", "doctor", "hospital", "pharmacy"],
   "Quick-Commerce": ["instamart", "blinkit", "zepto", "amazon fresh"],
   "E-Commerce": ["amazon", "flipkart", "myntra", "ajio"],
+  "Groceries": ["milk","vegetables","fruits","groceries","curd"],
   "Other": []
 }

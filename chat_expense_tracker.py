@@ -7,13 +7,20 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
-from langchain_community.llms import Ollama
+from langchain_openai import ChatOpenAI
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from telegram import InputFile
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # === LLM Setup ===
-llm = Ollama(model="llama3")
+llm = ChatOpenAI(
+    model="mistralai/mistral-7b-instruct",
+    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
+    openai_api_base="https://openrouter.ai/api/v1"
+)
 
 amount_prompt = ChatPromptTemplate.from_template(
     """
@@ -34,7 +41,7 @@ amount_prompt = ChatPromptTemplate.from_template(
     """
 )
 
-llm_chain = LLMChain(llm=llm, prompt=amount_prompt)
+expense_chain = amount_prompt | llm
 
 # === Load categories once ===
 with open("categories.json", "r") as f:
@@ -86,7 +93,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text
     try:
-        response = llm_chain.invoke({"text": user_input})
+        response = expense_chain.invoke({"text": user_input})
         print("🔎 Raw LLM Response:", response)
 
         # Get response text
