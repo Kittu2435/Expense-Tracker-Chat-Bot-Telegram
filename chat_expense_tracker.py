@@ -101,25 +101,42 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = category_chain.invoke({"description": user_input})
         print("🔎 Raw LLM Response:", response)
 
-        # Get response text
         response_text = response.get("text") if isinstance(response, dict) else getattr(response, "content", "")
 
-        # Extract valid JSON array from response
-        json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
-        if not json_match:
-            raise ValueError("No valid JSON array found in LLM response")
+        # Try to parse valid JSON — handle both single and multiple entries
+        expenses = []
 
-        expenses_json = json_match.group(0)
-        expenses = json.loads(expenses_json)
+        try:
+            parsed = json.loads(response_text)
+            if isinstance(parsed, dict):
+                expenses = [parsed]
+            elif isinstance(parsed, list):
+                expenses = parsed
+            else:
+                raise ValueError("JSON is not in expected format")
+        except json.JSONDecodeError:
+            match = re.search(r'\[.*\]', response_text, re.DOTALL)
+            if match:
+                try:
+                    expenses = json.loads(match.group(0))
+                except json.JSONDecodeError:
+                    raise ValueError("Could not decode extracted JSON")
+            else:
+                match = re.search(r'{\s*"description":.*?}', response_text, re.DOTALL)
+                if match:
+                    try:
+                        expenses = [json.loads(match.group(0))]
+                    except Exception:
+                        raise ValueError("Failed to parse single expense JSON")
 
-        if not isinstance(expenses, list):
-            raise ValueError("Parsed response is not a list")
+        if not expenses:
+            raise ValueError("No valid expenses found")
 
         confirmation = ""
         for exp in expenses:
             description = exp["description"]
             amount = float(exp["amount"])
-            category=exp.get("category","Other")
+            category = exp.get("category", "Other")
             save_expense_to_excel(description, amount)
             confirmation += f"✅ {description}: ₹{amount} [{category}]\n"
 
