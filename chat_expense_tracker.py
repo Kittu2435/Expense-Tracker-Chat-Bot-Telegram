@@ -26,7 +26,7 @@ full_prompt = ChatPromptTemplate.from_template(
     """
     You are a strict JSON extractor and classifier.
 
-    Given this text: '{text}', extract all expenses and numeric amounts, and classify each expense into one of these categories:
+    Given this text: '{description}', extract all expenses and numeric amounts, and classify each expense into one of these categories:
     [Groceries, Food, Travel, Transport, Health, Entertainment, Utilities, Rent, Shopping, Sports, Education, Miscellaneous]
 
     Return ONLY valid JSON in this format:
@@ -43,10 +43,6 @@ full_prompt = ChatPromptTemplate.from_template(
 )
 
 category_chain = full_prompt | llm
-
-# === Load categories once ===
-with open("categories.json", "r") as f:
-    CATEGORY_KEYWORDS = json.load(f)
 
 # === Categorization ===
 def categorize_expense(description):
@@ -106,7 +102,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_input = update.message.text
     try:
-        response = category_chain.invoke({"text": user_input})
+        response = category_chain.invoke({"description": user_input})
         print("🔎 Raw LLM Response:", response)
 
         # Get response text
