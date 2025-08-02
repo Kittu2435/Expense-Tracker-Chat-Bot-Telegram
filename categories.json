@@ -8,5 +8,6 @@
   "Quick-Commerce": ["instamart", "blinkit", "zepto", "amazon fresh"],
   "E-Commerce": ["amazon", "flipkart", "myntra", "ajio"],
   "Groceries": ["milk","vegetables","fruits","groceries","curd"],
+  "Deserts/Icecreams": ["deserts","icecream","Icecreams","cake","cupcake","muffin"],
   "Other": []
 }
