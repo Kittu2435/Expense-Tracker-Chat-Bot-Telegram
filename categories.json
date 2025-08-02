@@ -1,5 +1,5 @@
 {
-  "Food": ["food", "restaurant", "dinner", "lunch", "snack", "swiggy", "zomato", "dineout","curry"],
+  "Food": ["food", "restaurant", "dinner", "lunch", "snack", "swiggy", "zomato", "dineout","curry","tiffins"],
   "Fuel": ["fuel", "petrol", "diesel"],
   "Shopping": ["clothes", "apparel", "shirt", "jeans"],
   "Utilities": ["rent", "electricity", "internet", "bill", "dth"],
