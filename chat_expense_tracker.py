@@ -11,6 +11,8 @@ from langchain_openai import ChatOpenAI
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from telegram import InputFile
+from openpyxl.chart import PieChart, BarChart, Reference
+from collections import defaultdict
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -78,6 +80,36 @@ def save_expense_to_excel(description, amount):
         sheet.append(["Date", "Description", "Amount", "Category"])  # header
 
     sheet.append([str(date), description, amount, category])
+    
+    # === Generate Pie Chart ===
+    # Collect all category totals
+    data = defaultdict(float)
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        cat = row[3]
+        amt = row[2]
+        if isinstance(amt, (int, float)):
+            data[cat] += amt
+
+    # Remove existing chart sheet if exists
+    if 'Charts' in workbook.sheetnames:
+        del workbook['Charts']
+
+    chart_sheet = workbook.create_sheet("Charts")
+    chart_sheet.append(["Category", "Total"])
+    for cat, amt in data.items():
+        chart_sheet.append([cat, amt])
+
+    # Create the pie chart
+    pie = PieChart()
+    pie.title = "Expenses by Category"
+
+    labels = Reference(chart_sheet, min_col=1, min_row=2, max_row=1 + len(data))
+    values = Reference(chart_sheet, min_col=2, min_row=2, max_row=1 + len(data))
+
+    pie.add_data(values, titles_from_data=False)
+    pie.set_categories(labels)
+    chart_sheet.add_chart(pie, "E2")
+    
     workbook.save(filename)
  
 # Download expense sheet
