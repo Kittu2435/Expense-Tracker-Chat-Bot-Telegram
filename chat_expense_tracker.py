@@ -11,6 +11,8 @@ from langchain_openai import ChatOpenAI
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 from telegram import InputFile
+from openpyxl.chart import PieChart, BarChart, Reference
+from collections import defaultdict
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -78,6 +80,36 @@ def save_expense_to_excel(description, amount):
         sheet.append(["Date", "Description", "Amount", "Category"])  # header
 
     sheet.append([str(date), description, amount, category])
+    
+    # === Generate Pie Chart ===
+    # Collect all category totals
+    data = defaultdict(float)
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        cat = row[3]
+        amt = row[2]
+        if isinstance(amt, (int, float)):
+            data[cat] += amt
+
+    # Remove existing chart sheet if exists
+    if 'Charts' in workbook.sheetnames:
+        del workbook['Charts']
+
+    chart_sheet = workbook.create_sheet("Charts")
+    chart_sheet.append(["Category", "Total"])
+    for cat, amt in data.items():
+        chart_sheet.append([cat, amt])
+
+    # Create the pie chart
+    pie = PieChart()
+    pie.title = "Expenses by Category"
+
+    labels = Reference(chart_sheet, min_col=1, min_row=2, max_row=1 + len(data))
+    values = Reference(chart_sheet, min_col=2, min_row=2, max_row=1 + len(data))
+
+    pie.add_data(values, titles_from_data=False)
+    pie.set_categories(labels)
+    chart_sheet.add_chart(pie, "E2")
+    
     workbook.save(filename)
  
 # Download expense sheet
@@ -101,25 +133,42 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = category_chain.invoke({"description": user_input})
         print("🔎 Raw LLM Response:", response)
 
-        # Get response text
         response_text = response.get("text") if isinstance(response, dict) else getattr(response, "content", "")
 
-        # Extract valid JSON array from response
-        json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
-        if not json_match:
-            raise ValueError("No valid JSON array found in LLM response")
+        # Try to parse valid JSON — handle both single and multiple entries
+        expenses = []
 
-        expenses_json = json_match.group(0)
-        expenses = json.loads(expenses_json)
+        try:
+            parsed = json.loads(response_text)
+            if isinstance(parsed, dict):
+                expenses = [parsed]
+            elif isinstance(parsed, list):
+                expenses = parsed
+            else:
+                raise ValueError("JSON is not in expected format")
+        except json.JSONDecodeError:
+            match = re.search(r'\[.*\]', response_text, re.DOTALL)
+            if match:
+                try:
+                    expenses = json.loads(match.group(0))
+                except json.JSONDecodeError:
+                    raise ValueError("Could not decode extracted JSON")
+            else:
+                match = re.search(r'{\s*"description":.*?}', response_text, re.DOTALL)
+                if match:
+                    try:
+                        expenses = [json.loads(match.group(0))]
+                    except Exception:
+                        raise ValueError("Failed to parse single expense JSON")
 
-        if not isinstance(expenses, list):
-            raise ValueError("Parsed response is not a list")
+        if not expenses:
+            raise ValueError("No valid expenses found")
 
         confirmation = ""
         for exp in expenses:
             description = exp["description"]
             amount = float(exp["amount"])
-            category=exp.get("category","Other")
+            category = exp.get("category", "Other")
             save_expense_to_excel(description, amount)
             confirmation += f"✅ {description}: ₹{amount} [{category}]\n"
 
